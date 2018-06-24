@@ -68,45 +68,47 @@ void loop() {
         wifiConnection();
     } else {
         //Leitura do sensor
-//        float voltagem_sensor = (1.0*analogRead(SHARP_PIN)/1024) * 5;
         int leitura_analogica = analogRead(SHARP_PIN);
+//        float voltagem_sensor = (1.0*analogRead(SHARP_PIN)/1024) * 5; //Conversão com Arduino
         float voltagem_sensor = (1.0*leitura_analogica/1024) * 3.0;
-        //float voltagem_node = map(voltagem_sensor, 0.0, 5.0, 0.0, 1.0);
-        //Aplicação de um filtro: 
+        
         //Se a voltagem medida pelo sensor for menor que 0.4V ~ 130cm 
         //então a leitura está errada pois da base até o topo da cisterna 
         //há apenas 130cm de altura.
-//        if (voltagem_sensor < 0.4) {
-//            //leitura inconsistente
-//            Serial.println("leitura maior que 130cm");
-//            return;
-//        }
-        //Aplicação de um filtro:
+        if (voltagem_sensor < 0.4) {
+            //leitura inconsistente
+            Serial.println("leitura maior que 130cm");
+            delay(1000);
+            return;
+        }
+        
         //Se a voltagem medida pelo snsor for maior que 2.5V ~ 20cm 
         //então a leitura está errada pois a água dentro da cisterna 
         //deve chegar a no máximo 110cm de altura (no máximo a 20cm 
         //de distância de sensor).
-//        if (voltagem_sensor > 2.5) { //fazer um #define calcular os filtros com base na distancia
-//            //leitura inconsistente
-//            Serial.println("leitura menor que 20cm");
-//            return;
-//        }
+        if (voltagem_sensor > 2.5) { //TODO fazer um #define calcular os filtros com base na distancia
+            //leitura inconsistente
+            Serial.println("leitura menor que 20cm");
+            delay(1000);
+            return;
+        }
 
         D(Serial.print("leitura_analogica: ");)
         D(Serial.print(leitura_analogica);)
         D(Serial.print(" voltagem_sensor: ");)
         D(Serial.print(voltagem_sensor);)
-//        D(Serial.print(" voltagem_node ");)
-//        D(Serial.print(voltagem_node);)
         float distancia = calcula_distancia(voltagem_sensor);
-//        float distancia = calcula_distancia(voltagem_node);
         D(Serial.print(" distancia: ");)
         D(Serial.println(distancia);)
 
         //Time stamp provisorio
-        String str_dist = "[{\"tempo\":\"" + String((1.0*millis()-inicio)/1000) + "\"}," + "{\"distancia\":\"" + String(distancia) + "\"}]";
-        char msg[70];
-        str_dist.toCharArray(msg, 70);
+//        String str_dist = "[{\"tempo\":\"" + String((1.0*millis()-inicio)/1000) + "\"}," + "{\"distancia\":" + String(distancia) + "}]";
+//        String str_dist = "{\"eon\":[{\"tempo\":\"" + String((1.0*millis()-inicio)/1000) + "\"}," + "{\"distancia\":" + String(distancia) + "}]}";
+
+        String str_dist = "{\"eon\":{\"tempo\":" + String((1.0*millis()-inicio)/1000) + "," + "\"distancia\":" + String(distancia) + "}}";
+
+        char msg[100];
+        str_dist.toCharArray(msg, 100);
         Serial.println(msg);
         
         //Envio da mensagem para a nuvem (usando o servico do PubNub)
@@ -167,9 +169,9 @@ void loop() {
 //        Serial.println();
 
         if (String(comando).equals("ativa")) {
-            analogWrite(SERVO_PIN, 100);  
-        } else if (String(comando).equals("desativa")) {
             analogWrite(SERVO_PIN, 800);
+        } else if (String(comando).equals("desativa")) {
+            analogWrite(SERVO_PIN, 100);
         }
         
     }
