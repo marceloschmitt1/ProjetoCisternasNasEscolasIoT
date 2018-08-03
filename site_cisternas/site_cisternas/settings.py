@@ -31,6 +31,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # 'site_cisternas.apps.CisternasConfig',
+    'cisternas.apps.CisternasConfig',
+    'rest_framework',
     'polls.apps.PollsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -71,29 +74,29 @@ TEMPLATES = [
 WSGI_APPLICATION = 'site_cisternas.wsgi.application'
 
 
-Database
-https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+#Database
+#https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'cisterna',
-#         'USER': 'marcelo',
-#         'PASSWORD': 'senha',
-#         'HOST': '127.0.0.1',
-#         'PORT': '5432',
-#         'TEST': {
-#             'NAME': 'cisterna_teste',
-#         },
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
 #     }
 # }
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cisterna',
+        'USER': 'marcelo',
+        'PASSWORD': 'senha',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+        'TEST': {
+            'NAME': 'cisterna_teste',
+        },
+    }
+}
 
 
 # Password validation
@@ -138,3 +141,8 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# STATIC_ROOT = '/home/marcelosc/ProjetoCisternasNasEscolas/site_cisternas/staticfiles'

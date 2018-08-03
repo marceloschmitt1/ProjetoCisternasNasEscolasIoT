@@ -1,0 +1,161 @@
+{% extends 'cisternas/base.html' %}
+
+<h1>Detalhes da Cisterna</h1>
+
+{% block content %}
+<div class="container">
+	
+	<section class="section section-stats">
+		<div class="row">
+			
+			<div class="col s3 m4 4">
+				<div class="card-panel">
+					<h6 class="bold">Cisternas</h6>
+					<h1 class="bold">2</h1>
+				</div>
+			</div>
+
+			<div class="col s4 m4 6">
+				<div class="card-panel">
+					<h6 class="bold">Medições</h6>
+					<h1 class="bold">23545</h1>
+				</div>
+			</div>
+
+			<div class="col s3 m4 6">
+				<div class="card-panel">
+					<h6 class="bold">Status</h6>
+					<h1 class="bold">OK</h1>
+				</div>
+			</div>
+
+		</div>
+	</section>
+
+	<section class="section section-detalhes">
+		<div class="row">
+			<button class="btn waves-effect right">
+				<i class="material-icons white-text left">add_circle</i>
+				Adicionar cisterna
+			</button>
+		</div>
+
+		<ul class="z-depth-1">
+			{% for cisterna in cisternas_list %}
+			<li>
+				<div class="card-panel z-depth-0 cisterna">
+					<div class="row">
+						
+						<div class="col s3 m3 4">
+							<span class="title">{{cisterna}}</span>
+						</div>
+
+						<div class="col s5 m5 6">
+							<span class="title">última medição: 
+								{% if cisterna.ultima_medicao %} 
+									{{cisterna.ultima_medicao}} 
+								{% else %}
+									Nenhuma medição
+								{% endif %}
+							</span>
+						</div>
+
+						<div class="col s3 m3 4">
+							<span class="title bold">{{ cisterna.litros}} litro(s)</span>
+						</div>
+
+						<a href="">
+							<i class="material-icons brown-text">format_color_fill</i>
+						</a>
+
+					</div>
+				</div>
+			</li>
+			{% endfor %}
+		</ul>
+
+		<ul class="z-depth-1">
+			<li>
+				<div class="card-panel z-depth-0 cisterna">
+					<div class="row">
+						
+						<div class="col s3 m3 4">
+							<span class="title">Cisterna X</span>
+						</div>
+
+						<div class="col s5 m5 6">
+							<span class="title">última medição</span>
+						</div>
+
+						<div class="col s3 m3 4">
+							<span class="title bold">litros</span>
+						</div>
+
+						<a href="">
+							<i class="material-icons brown-text">format_color_fill</i>
+						</a>
+
+					</div>
+				</div>
+			</li>
+			
+		</ul>
+
+		<ul class="z-depth-1">
+			<li>
+				<div class="card-panel z-depth-0 cisterna">
+					<div class="row">
+						
+						<div class="col s3 m3 4">
+							<span class="title">Cisterna X</span>
+						</div>
+
+						<div class="col s5 m5 6">
+							<span class="title">última medição</span>
+						</div>
+
+						<div class="col s3 m3 4">
+							<span class="title bold">litros</span>
+						</div>
+
+						<a href="">
+							<i class="material-icons brown-text">format_color_fill</i>
+						</a>
+
+					</div>
+				</div>
+			</li>
+			
+		</ul>
+
+		<ul class="z-depth-1">
+			<li>
+				<div class="card-panel z-depth-0 cisterna">
+					<div class="row">
+						
+						<div class="col s3 m3 4">
+							<span class="title">Cisterna X</span>
+						</div>
+
+						<div class="col s5 m5 6">
+							<span class="title">última medição</span>
+						</div>
+
+						<div class="col s3 m3 4">
+							<span class="title bold">litros</span>
+						</div>
+
+						<a href="">
+							<i class="material-icons brown-text">format_color_fill</i>
+						</a>
+
+					</div>
+				</div>
+			</li>
+			
+		</ul>
+
+	</section>
+
+</div>
+{% endblock %}

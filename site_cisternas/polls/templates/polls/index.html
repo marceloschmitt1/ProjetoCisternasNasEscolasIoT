@@ -1,0 +1,27 @@
+{% if latest_question_list %}
+    <ul>
+	<table>
+		<tr>
+			<td>ID da questão</td>
+			<td>Questão</td>
+			<td>Data de publicação</td>
+			<td>Votar</td>
+			<td>Resultados</td>
+		</tr>
+	    {% for question in latest_question_list %}
+	    	<tr>
+	    		<td>{{ question.id }}</td>
+	    		<td><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></td>
+	    		<td>{{ question.pub_date }}</td>
+	    		<td><a href="{% url 'polls:vote' question.id %}">Votar</a></td>
+		    	<td><a href="{% url 'polls:results' question.id %}">Resultados</a></td>
+	    	</tr>
+			
+		    <!-- <li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li> -->
+		    <!-- </li> -->
+    	{% endfor %}
+	</table>
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}

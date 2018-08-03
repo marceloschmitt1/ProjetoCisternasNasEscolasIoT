@@ -25,8 +25,8 @@
 int status = WL_IDLE_STATUS;                // the Wifi radio's status
 
 // Wireless settings
-const char* ssid = "Marcelo_";
-const char* pass = "34753475";
+const char* ssid = "MarDroid";
+const char* pass = "mirtero1";
 
 // PubNub settings
 const static char pubkey[] = "pub-c-6ce39655-3209-4cea-acc9-543751fe4e55";         // your publish key 
@@ -105,7 +105,7 @@ void loop() {
 //        String str_dist = "[{\"tempo\":\"" + String((1.0*millis()-inicio)/1000) + "\"}," + "{\"distancia\":" + String(distancia) + "}]";
 //        String str_dist = "{\"eon\":[{\"tempo\":\"" + String((1.0*millis()-inicio)/1000) + "\"}," + "{\"distancia\":" + String(distancia) + "}]}";
 
-        String str_dist = "{\"eon\":{\"tempo\":" + String((1.0*millis()-inicio)/1000) + "," + "\"distancia\":" + String(distancia) + "}}";
+        String str_dist = "{\"eon\":{\"time_stamp\":" + String((1.0*millis()-inicio)/1000) + "," + "\"litros\":" + String(distancia) + "}}";
 
         char msg[100];
         str_dist.toCharArray(msg, 100);

@@ -16,7 +16,25 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+
+# from .router import router
+# from . import router
+
+from rest_framework import serializers, viewsets, routers
+from cisternas.api.viewsets import CisternaViewSet, MedicaoViewSet
+
+router = routers.DefaultRouter()
+router.register('cisternas', CisternaViewSet)
+router.register('medicoes', MedicaoViewSet)
+
+from . import views
+
+app_name = 'cisternas'
 urlpatterns = [
+	# path('', views.index2, name='index2', kwargs={"arg0": 2}),
+	# path('', views.index, name='index'),
+	path('', include('cisternas.urls')),
 	path('polls/', include('polls.urls')),
     path('admin/', admin.site.urls),
+    path('api/', include(router.urls)),
 ]
