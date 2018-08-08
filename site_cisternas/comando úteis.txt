@@ -1,0 +1,32 @@
+#iniciar o ambiente virtual onde instalei o django
+source ~/.virtualenvs/django_cisterna/bin/activate
+
+#para desativar
+deactivate
+
+#iniciar o servidor (escutando na porta 8000)
+python manage.py runserver
+
+#iniciar o servidor (escutando na porta 8080)
+python manage.py runserver 8080
+#veja https://docs.djangoproject.com/en/2.0/intro/tutorial01/
+
+
+#iniciar o shell do django
+python manage.py shell
+
+interface de admin
+usuário: marcelo
+senha: senhasenha
+
+
+credenciais do postgres
+nome do bd: cisterna
+usuário: marcelo
+senha: senha
+
+# para salvar as dependências (python packages necessários)
+pip freeze > requirements.txt
+
+deploy no pythonanywhere
+https://www.youtube.com/watch?v=SCoGwHCNXVw

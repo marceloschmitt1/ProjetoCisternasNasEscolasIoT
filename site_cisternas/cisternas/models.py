@@ -40,6 +40,10 @@ class Medicao(models.Model):
 	def __str__(self):
 		return "{} litro(s) em {}".format(self.litros, self.time_stamp)
 
+	class Meta:
+		ordering = ('time_stamp',)
+			
+
 	# def __init__(self, arg):
 	# 	super(Medicao, self).__init__()
 	# 	self.arg = arg

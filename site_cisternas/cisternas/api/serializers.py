@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from cisternas.models import Cisterna
-from cisternas.models import Medicao
+from cisternas.models import Cisterna, Medicao
 
 
 class CisternaSerializer(serializers.HyperlinkedModelSerializer):
