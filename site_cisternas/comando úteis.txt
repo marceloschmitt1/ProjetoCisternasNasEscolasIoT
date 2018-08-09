@@ -19,6 +19,8 @@ interface de admin
 usuário: marcelo
 senha: senhasenha
 
+#criar um usuário admin
+python manage.py createsuperuser
 
 credenciais do postgres
 nome do bd: cisterna
