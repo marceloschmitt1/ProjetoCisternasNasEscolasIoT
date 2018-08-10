@@ -10,77 +10,127 @@ from pubnub.pubnub import PubNub
 
 
 # framework REST (TODO remover os imports abaixo)
-from django.http import HttpResponse, JsonResponse
+# from django.http import HttpResponse, JsonResponse
 from rest_framework import status
-# from rest_framework.views import APIView
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
 # from snippets.models import Snippet
 from rest_framework.decorators import api_view
+from django.http import Http404
 from cisternas.api.serializers import CisternaSerializer
 
-# @csrf_exempt
-@api_view(['GET', 'POST'])
-def cis_list(request, format=None):
-    """
-    List all code snippets, or create a new snippet.
-    """
-    # Teste com:
-	# http GET http://127.0.0.1:8000/teste_api/
-	# http POST http://127.0.0.1:8000/teste_api/ nome="Cisterna_teste3" escola="Escola_teste2"
-	# http --debug --json POST http://127.0.0.1:8000/teste_api/ nome="Cisterna_teste3" escola="Escola_teste2"
-	# 
-    if request.method == 'GET':
-        cisterna = Cisterna.objects.all()
-        serializer = CisternaSerializer(cisterna, many=True)
-        # return JsonResponse(serializer.data, safe=False)
-        return Response(serializer.data)
+class CisternaList(APIView):
+	"""
+	List all cisternas, or create a cisterna.\n
+	Listar todas as cisternas, ou criar uma nova.
+	"""
 
-    elif request.method == 'POST':
-        # data = JSONParser().parse(request)
-        # serializer = CisternaSerializer(data=data)
-        serializer = CisternaSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            # return JsonResponse(serializer.data, status=201)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        # return JsonResponse(serializer.errors, status=400)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# @csrf_exempt # essa anotation é para o rest_framework ignorar a proteção de acesso e permitir PUT e DELETE
-@api_view(['GET', 'PUT', 'DELETE'])	
-def cis_detail(request, pk, format=None):
-	''' Retrieve, update or deleta '''
-	# Teste com:
-	# http GET http://127.0.0.1:8000/teste_api/3/
-	# http PUT http://127.0.0.1:8000/teste_api/3/ nome="Cisteeehernna" escola="Escola"
-	# http DELETE http://127.0.0.1:8000/teste_api/3/
-	try:
-		cisterna = Cisterna.objects.get(pk=pk)
-	except Exception as e:
-		# return HttpResponse(status=404)
-		return Response(status=status.HTTP_404_NOT_FOUND)
-
-	if request.method == 'GET':
-		serializer = CisternaSerializer(cisterna)
-		# return JsonResponse(serializer.data)
+	def get(self, request, format=None):
+		cisternas = Cisterna.objects.all()
+		serializer = CisternaSerializer(cisternas, many=True)
 		return Response(serializer.data)
-	elif request.method == 'PUT':
-		# data = JSONParser().parse(request)
-		# serializer = CisternaSerializer(cisterna, data=data)
+
+	def post(self, request, format=None):
+		serializer = CisternaSerializer(data=request.data)
+		if serializer.is_valid():
+			serializer.save()
+			return Response(serializer.data, status=status.HTTP_201_CREATED)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CisternaDetail(APIView):
+	"""
+	Retrieve, update or deleta a cisterna instance
+	"""
+
+	def get_object(self, pk):
+		try:
+			return Cisterna.objects.get(pk=pk)
+		except Cisterna.DoesNotExist as dne:
+			raise Http404("Cisterna não existe / nenhuma cisterna encontrada: {}".format(dne))
+
+	def get(self, request, pk, format=None):
+		cisterna = self.get_object(pk)
+		serializer = CisternaSerializer(cisterna)
+		return Response(serializer.data)
+
+	def put(self, request, pk, format=None):
+		cisterna = self.get_object(pk)
 		serializer = CisternaSerializer(cisterna, data=request.data)
 		if serializer.is_valid():
 			serializer.save()
-			# return JsonResponse(serializer.data)
 			return Response(serializer.data)
-		# return JsonResponse(serializer.errors, status=400)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-	elif request.method == 'DELETE':
+
+	def delete(self, request, pk, format=None):
+		cisterna = self.get_object(pk)
 		cisterna.delete()
-		# return HttpResponse(status=204)
 		return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# @csrf_exempt
+# @api_view(['GET', 'POST'])
+# def cis_list(request, format=None):
+#     """
+#     List all code snippets, or create a new snippet.
+#     """
+#     # Teste com:
+# 	# http GET http://127.0.0.1:8000/teste_api/
+# 	# http POST http://127.0.0.1:8000/teste_api/ nome="Cisterna_teste3" escola="Escola_teste2"
+# 	# http --debug --json POST http://127.0.0.1:8000/teste_api/ nome="Cisterna_teste3" escola="Escola_teste2"
+# 	# 
+#     if request.method == 'GET':
+#         cisterna = Cisterna.objects.all()
+#         serializer = CisternaSerializer(cisterna, many=True)
+#         # return JsonResponse(serializer.data, safe=False)
+#         return Response(serializer.data)
+
+#     elif request.method == 'POST':
+#         # data = JSONParser().parse(request)
+#         # serializer = CisternaSerializer(data=data)
+#         serializer = CisternaSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             # return JsonResponse(serializer.data, status=201)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         # return JsonResponse(serializer.errors, status=400)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# @csrf_exempt # essa anotation é para o rest_framework ignorar a proteção de acesso e permitir PUT e DELETE
+# @api_view(['GET', 'PUT', 'DELETE'])	
+# def cis_detail(request, pk, format=None):
+# 	''' Retrieve, update or deleta '''
+# 	# Teste com:
+# 	# http GET http://127.0.0.1:8000/teste_api/3/
+# 	# http PUT http://127.0.0.1:8000/teste_api/3/ nome="Cisteeehernna" escola="Escola"
+# 	# http DELETE http://127.0.0.1:8000/teste_api/3/
+# 	try:
+# 		cisterna = Cisterna.objects.get(pk=pk)
+# 	except Exception as e:
+# 		# return HttpResponse(status=404)
+# 		return Response(status=status.HTTP_404_NOT_FOUND)
+
+# 	if request.method == 'GET':
+# 		serializer = CisternaSerializer(cisterna)
+# 		# return JsonResponse(serializer.data)
+# 		return Response(serializer.data)
+# 	elif request.method == 'PUT':
+# 		# data = JSONParser().parse(request)
+# 		# serializer = CisternaSerializer(cisterna, data=data)
+# 		serializer = CisternaSerializer(cisterna, data=request.data)
+# 		if serializer.is_valid():
+# 			serializer.save()
+# 			# return JsonResponse(serializer.data)
+# 			return Response(serializer.data)
+# 		# return JsonResponse(serializer.errors, status=400)
+# 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# 	elif request.method == 'DELETE':
+# 		cisterna.delete()
+# 		# return HttpResponse(status=204)
+# 		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # Create your views here.
