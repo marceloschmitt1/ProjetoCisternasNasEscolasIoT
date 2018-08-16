@@ -11,14 +11,14 @@
 			<div class="col s3 m4 4">
 				<div class="card-panel">
 					<h6 class="bold">Cisternas</h6>
-					<h1 class="bold">2</h1>
+					<h1 class="bold">{{ cisternas_list.count }}</h1>
 				</div>
 			</div>
 
 			<div class="col s4 m4 6">
 				<div class="card-panel">
 					<h6 class="bold">Medições</h6>
-					<h1 class="bold">23545</h1>
+					<h1 class="bold">{{ medicao_count }}</h1>
 				</div>
 			</div>
 
@@ -64,7 +64,7 @@
 						</div>
 
 						<div class="col s3 m3 4">
-							<span class="title bold">{{ cisterna.litros}} litro(s)</span>
+							<span class="title bold">{{cisterna.litros}} litro(s)</span>
 						</div>
 
 						<a href="">

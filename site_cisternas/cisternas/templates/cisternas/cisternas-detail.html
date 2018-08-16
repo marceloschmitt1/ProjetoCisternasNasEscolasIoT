@@ -2,19 +2,25 @@
 <html>
 <head>
 	<title> {{ cisterna }}</title>
+    <script type="text/javascript" src="//pubnub.github.io/eon/v/eon/1.0.0/eon.js"></script>
+    <link type="text/css" rel="stylesheet" href="//pubnub.github.io/eon/v/eon/1.0.0/eon.css"/>
 </head>
 <body>
 
 <h1>Detalhes da Cisterna</h1> {{ cisterna }}
 
 
+<div class="font-size 0.1em" id="rt_gauge"></div>
+<div id="rt_plot"></div>
 
+
+<h3>Lista de medidas</h3>
 
 <ul>
 {% for medicao in medicoes_list %}
-	<li>
-		{{ medicao }}
-	</li>
+  <li>
+    {{ medicao }}
+  </li>
 
 {% endfor %}
 </ul>
@@ -22,168 +28,97 @@
 
 </body>
 
-<script type="text/javascript" src="//pubnub.github.io/eon/v/eon/1.0.0/eon.js"></script>
-<link type="text/css" rel="stylesheet" href="//pubnub.github.io/eon/v/eon/1.0.0/eon.css"/>
-<div id="gauge"></div>
+
 <script type="text/javascript">
-var pubnub_gauge = new PubNub({
-  publishKey: "pub-c-6ce39655-3209-4cea-acc9-543751fe4e55",
-  subscribeKey: "sub-c-6e52b6c2-8e6b-11e8-b7a4-ce74daf54d52"
-});
-gauge_chart = eon.chart({
-  pubnub: pubnub,
-  channels: ["dados_cisterna"],
-  history: true,
-  generate: {
-    bindto: '#gauge',
-    data: {
-      type: 'gauge',
-    },
-    // distancia: {
-    // 	type: "gauge",
-    // }
-    gauge: {
-      min: 0,
-      max: 100
-    },
-    color: {
-      pattern: ['#FF0000', '#F6C600', '#60B044'],
-      threshold: {
-        values: [30, 60, 90]
-      }
-    }
-  }
-});
+    var __eon_pubnub = new PubNub({
+        subscribeKey: "sub-c-6e52b6c2-8e6b-11e8-b7a4-ce74daf54d52"
+    });
+
+    gauge_chart = eon.chart({
+        pubnub: __eon_pubnub,
+        channels: ["dados_cisterna"],
+        history: true,
+        generate: {
+            bindto: '#rt_gauge',
+            data: {
+                type: 'gauge',
+                //colors: {"litros":"#407fe5"},
+            },
+            gauge: {
+                min: 0,
+                max: 100
+            },
+            color: {
+                pattern: ['#FF0000', '#F6C600', '#60B044'],
+                threshold: {
+                  values: [30, 60, 90]
+                }
+            }
+        },
+        // debug: true
+    });
+
+
+    var __eon_cols = ["litros"];
+    var __eon_labels = {};
+
+    plot_chart = eon.chart({
+        pubnub: __eon_pubnub,
+        channels: ["dados_cisterna"],
+        history: true,
+        flow: true,
+        rate: 1000,
+        limit: 5,
+        generate: {
+            bindto: "#rt_plot",
+            data: {
+                colors: {"time_stamp":"#D70060","litros":"#407fe5"},
+                type: "area"
+            },
+            transition: {
+                duration: 250
+            },
+            axis: {
+                x: {
+                    // type: 'timeseries',
+                    // localtime: true,
+                    // tick: {
+                    //     format: '%d-%m-%Y %H:%M:%S'
+                    // }
+                    label: "time_stamp"
+                },
+                y: {
+                    label: "litros"
+                }
+            },
+            grid: {
+                x: {
+                    show: true 
+                },
+                y: {
+                    show: true 
+                }
+            },
+            tooltip: {
+                show: true
+            },
+            point: {
+                show: true
+            }
+        },
+        transform: function(message) {
+            var message = eon.c.flatten(message.eon);
+            var o = {};
+            for(index in message) {
+                if(__eon_cols.indexOf(index) > -1){
+                    o[__eon_labels[index] || index] = message[index];
+                }
+            }
+            return {
+                eon: o
+            };
+        }
+    });
 </script>
-
-
-<script type="text/javascript" src="https://pubnub.github.io/eon/v/eon/1.0.0/eon.js"></script>
-<link type="text/css" rel="stylesheet" href="https://pubnub.github.io/eon/v/eon/1.0.0/eon.css" />
-<div id="chart"></div>
-<script type="text/javascript">
-var __eon_pubnub = new PubNub({
-  subscribeKey: "sub-c-6e52b6c2-8e6b-11e8-b7a4-ce74daf54d52"
-});
-var __eon_cols = ["litros"]; 
-var __eon_labels = {}; 
-chart = eon.chart({
-  pubnub: __eon_pubnub,
-  channels: ["dados_cisterna"],
-  history: true,
-  flow: true,
-  rate: 1000,
-  limit: 5,
-  generate: {
-    bindto: "#chart",
-    data: {
-      colors: {"time_stamp":"#D70060","litros":"#407fe5"},
-      type: "spline"
-    },
-    transition: {
-      duration: 250
-    },
-    axis: {
-      x: {
-        label: "time_stamp"
-      },
-      y: {
-        label: "litros"
-      }
-    },
-    grid: {
-      x: {
-        show: true 
-      },
-      y: {
-        show: true 
-      }
-    },
-    tooltip: {
-     show: true
-    },
-    point: {
-      show: true
-    }
-  },
-  transform: function(message) {
-    var message = eon.c.flatten(message.eon);
-    var o = {};
-    for(index in message) {
-      if(__eon_cols.indexOf(index) > -1){
-        o[__eon_labels[index] || index] = message[index];
-      }
-    }
-    return {
-      eon: o
-    };
-  }
-});
-</script>
-
-
-<!-- <script type="text/javascript" src="https://pubnub.github.io/eon/v/eon/1.0.0/eon.js"></script>
-<link type="text/css" rel="stylesheet" href="https://pubnub.github.io/eon/v/eon/1.0.0/eon.css" />
-<div id="chart"></div>
-<script type="text/javascript">
-var __eon_pubnub = new PubNub({
-  subscribeKey: "sub-c-bd9ab0d6-6e02-11e5-8d3b-0619f8945a4f"
-});
-var __eon_cols = ["Austin","Portland"]; 
-var __eon_labels = {}; 
-chart = eon.chart({
-  pubnub: __eon_pubnub,
-  channels: ["test-channel-0.6569502841791012"],
-  history: true,
-  flow: true,
-  rate: 1000,
-  limit: 5,
-  generate: {
-    bindto: "#chart",
-    data: {
-      colors: {"Austin":"#D70060","New York":"#E54028","San Francisco":"#F18D05","Portland":"#113F8C"},
-      type: "spline"
-    },
-    transition: {
-      duration: 250
-    },
-    axis: {
-      x: {
-        label: "label_eixo_x"
-      },
-      y: {
-        label: "label_eixo_y"
-      }
-    },
-    grid: {
-      x: {
-        show: true 
-      },
-      y: {
-        show: true 
-      }
-    },
-    tooltip: {
-     show: true
-    },
-    point: {
-      show: true
-    }
-  },
-  transform: function(message) {
-    var message = eon.c.flatten(message.eon);
-    var o = {};
-    for(index in message) {
-      if(__eon_cols.indexOf(index) > -1){
-        o[__eon_labels[index] || index] = message[index];
-      }
-    }
-    return {
-      eon: o
-    };
-  }
-});
-</script> -->
-
-
 
 </html>
