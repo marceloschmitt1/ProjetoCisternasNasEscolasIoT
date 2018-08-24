@@ -7,12 +7,13 @@
 </head>
 <body>
 
-<h1>Detalhes da Cisterna</h1> {{ cisterna }}
+<h1>Detalhes da {{ cisterna }}</h1> 
 
 
-<div class="font-size 0.1em" id="rt_gauge"></div>
+<div class="gauge" id="rt_gauge"></div>
 <div id="rt_plot"></div>
 
+<a href="{% url 'cisternas:list' %}">voltar</a>
 
 <h3>Lista de medidas</h3>
 
@@ -24,12 +25,12 @@
 
 {% endfor %}
 </ul>
-<a href="{% url 'cisternas:list' %}">voltar</a>
+
 
 </body>
 
-
 <script type="text/javascript">
+    //var __capacidade = cisterna.capacidade;
     var __eon_pubnub = new PubNub({
         subscribeKey: "sub-c-6e52b6c2-8e6b-11e8-b7a4-ce74daf54d52"
     });
@@ -41,18 +42,34 @@
         generate: {
             bindto: '#rt_gauge',
             data: {
+                columns: [
+                    ['litros']
+                ],
                 type: 'gauge',
-                //colors: {"litros":"#407fe5"},
+                // colors: {"litros":"#407fe5"},
             },
             gauge: {
+                label: {
+                    format: function(value, ratio) {
+                            // console.log(value);
+                            // console.log(value.toString());
+                            return value;
+                    },
+                    show: true // to turn off the min/max labels.
+                },
                 min: 0,
-                max: 100
+                max: 100,
+                units: ' litros',
+                width: 39, // for adjusting arc thickness
             },
             color: {
                 pattern: ['#FF0000', '#F6C600', '#60B044'],
                 threshold: {
                   values: [30, 60, 90]
                 }
+            },
+            size: {
+                height: 150
             }
         },
         // debug: true
@@ -120,5 +137,23 @@
         }
     });
 </script>
+
+<style lang="scss">
+/*
+.gauge {
+    font-size: small;
+}
+
+.c3-legend-item-event {
+    font-size: 20px;
+}
+*/
+.c3-gauge-value {
+    font-size: 15px;
+    opacity: 0.5;
+}
+
+</style>
+
 
 </html>

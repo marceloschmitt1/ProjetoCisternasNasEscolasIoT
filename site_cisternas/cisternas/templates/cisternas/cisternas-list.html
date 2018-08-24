@@ -33,12 +33,13 @@
 	</section>
 
 	<section class="section section-detalhes">
-		<div class="row">
-			<button class="btn waves-effect right">
-				<i class="material-icons white-text left">add_circle</i>
-				Adicionar cisterna
-			</button>
-		</div>
+
+		<!-- <div class="row"> -->
+			<!-- <button class="btn waves-effect right"> -->
+				<!-- <i class="material-icons white-text left">add_circle</i> -->
+				<!-- Adicionar cisterna -->
+			<!-- </button> -->
+		<!-- </div> -->
 
 		{% for cisterna in cisternas_list %}
 			
@@ -55,8 +56,8 @@
 
 						<div class="col s5 m5 6">
 							<span class="title">última medição: 
-								{% if cisterna.ultima_medicao %} 
-									{{cisterna.ultima_medicao}} 
+								{% if cisterna.medicoes.last %}
+									{{cisterna.medicoes.last.time_stamp}} 
 								{% else %}
 									Nenhuma medição
 								{% endif %}
@@ -64,7 +65,13 @@
 						</div>
 
 						<div class="col s3 m3 4">
-							<span class="title bold">{{cisterna.litros}} litro(s)</span>
+							<span class="title bold">
+								{% if cisterna.medicoes.last %}
+									{{cisterna.medicoes.last.litros}} litro(s)
+								{% else %}
+									Nenhuma medição
+								{% endif %}
+							</span>
 						</div>
 
 						<a href="">
