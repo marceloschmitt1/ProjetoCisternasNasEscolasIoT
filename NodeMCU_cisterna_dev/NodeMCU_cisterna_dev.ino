@@ -15,7 +15,7 @@
 #include <ArduinoJson.h>
 
 #define DEBUG
-//#define VERBOSE
+#define VERBOSE
 
 #ifdef DEBUG
     #define D(X) X
@@ -47,10 +47,14 @@ const static char canal_de_comandos[] = "comando_cisterna";
 
 /////////////////Recursos NTP//////////////////////////////////////
 unsigned int localPort = 2390;      // local port to listen for UDP packets
-IPAddress timeServerIP; // time.nist.gov NTP server address
+IPAddress timeServerIP; // time.nist.gov NTP server address //0.br.pool.ntp.org
+//TODO encontrar uma forma de pegar o time_stamp no fusohorario (UTC-3) correto
+//const char* ntpServerName = "time.nist.gov";
 const char* ntpServerName = "0.br.pool.ntp.org";
+//const char* ntpServerName = "c.st1.ntp.br";
+//const char* ntpServerName = "a.ntp.br";
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
-byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 
 // A UDP instance to let us send and receive packets over UDP
 WiFiUDP udp;
@@ -63,7 +67,7 @@ struct tm ts;
 char timeBuffer[80];
 bool timeDefined = false;
 ///////////////////////////////////////////////////////////////////
-
+/*
 /////////////////Propriedades da celula de carga///////////////////
 //#define  ADDO  0    //Data Out //versao para ESP01
 //#define  ADSK  2    //SCK //versao para ESP01
@@ -81,6 +85,10 @@ HX711_ADC LoadCell(D0, D2);
 long ultima_leitura = millis();
 float forca = 0.0;
 ///////////////////////////////////////////////////////////////////
+*/
+
+//número identificador da cisterna
+#define ID_CISTERNA 1
 
 #define PINO_ATUADOR D6
 
@@ -89,20 +97,26 @@ long inicio = millis();
 void setup() {
     Serial.begin(115200);
     D(Serial.println("Iniciando celula de carga ...");)
+    /*
     LoadCell.begin();
     long stabilisingtime = 5000; // tare preciscion can be improved by adding a few seconds of stabilising time
     LoadCell.start(stabilisingtime);
     LoadCell.setCalFactor(fator_de_calibracao); // user set calibration factor (float)
     D(Serial.println("Startup + tare is complete");)
     D(Serial.println();)
-    
+    */
     pinMode(PINO_ATUADOR, OUTPUT);
   
 //    pwm.setup(PINO_ATUADOR, 100, 512);
     // attempt to connect using WPA2 encryption:
     D(Serial.println("Attempting to connect to WPA network...");)
     wifiConnection();
+    
+    udp.begin(localPort);
+    
     PubNub.begin(pubkey, subkey);
+
+    randomSeed(analogRead(A0));
 }
 
 void loop() {
@@ -111,9 +125,12 @@ void loop() {
         wifiConnection();
     } else {
         //Get load cell reading
-        read_load_cell();
+        //read_load_cell();
+        //forca = ((millis() / 3) % 10) * 7.2;
+        float forca = random(100);
 
         //TODO calculate real water measure
+        float litros = forca;
         
         // Get current time from NTP
         if (!timeDefined) {
@@ -124,11 +141,11 @@ void loop() {
         time (&rawTime);
         now = rawTime + startTime;
         ts = *localtime(&now);
-        strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H:%M:%S.000Z", &ts);
+//        strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H:%M:%S.000Z", &ts);
+        strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H:%M:%S", &ts);
 
         D(Serial.println(timeBuffer);)
-
-        String json_string = "{\"eon\":{\"time_stamp\":" + String(timeBuffer) + "," + "\"litros\":" + String(forca) + "}}";
+        String json_string = "{\"cisterna\":" + String(ID_CISTERNA) + "," + "\"time_stamp\":\"" + String(timeBuffer) + "\"," + "\"eon\":{\"litros\":" + String(litros) + "}}";
         
         publishToPubNub(json_string);
         
@@ -154,7 +171,7 @@ void wifiConnection() {
     D(Serial.println(WiFi.localIP());)
 }
 
-
+/*
 void read_load_cell() {
     //update() should be called at least as often as HX711 sample rate; >10Hz@10SPS, >80Hz@80SPS
     //longer delay in scetch will reduce effective sample rate (be carefull with delay() in loop)
@@ -178,7 +195,7 @@ void read_load_cell() {
         Serial.println("Tare complete");
     }
 }
-
+*/
 void publishToPubNub(String json_string) {
     V(Serial.println("PublishToPubNub");)
     char json_char_array[100];
@@ -200,8 +217,8 @@ void publishToPubNub(String json_string) {
     V(while (client->available()) {)
         V(Serial.write(client->read());)
     V(})
+    V(Serial.println();)
     client->stop();
-    free(client); // To avoid runnig out of memory
 }
 
 void checkPubNubHistory() {
@@ -235,7 +252,6 @@ void checkPubNubHistory() {
     } else if (String(command).equals("desativa")) {
         analogWrite(PINO_ATUADOR, 100);
     }
-    free(client); // To avoid runnig out of memory
 }
 
 // Method to get the NTP response and backup the *startTime*
@@ -274,7 +290,12 @@ bool getTimeNTP() {
     
         // subtract seventy years:
         //unsigned long epoch = secsSince1900 - seventyYears;
-        now = secsSince1900 - seventyYears;
+
+        //TODO
+        const long timeZoneOffset = -10800L; //3 hours in seconds
+        now = secsSince1900 - seventyYears + timeZoneOffset ;
+
+//        now = secsSince1900 - seventyYears;
     
         // backup time after seventy years
         time( &rawTime );
