@@ -38,3 +38,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
 ]
+# para incluir login e logout
+urlpatterns += [
+    path('api-auth/', include('rest_framework.urls')),
+]

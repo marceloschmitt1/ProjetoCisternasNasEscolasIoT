@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 
-from .models import Cisterna
+from .models import Cisterna, Medicao
 
 # pubnub library
 # veja https://www.pubnub.com/docs/python/pubnub-python-sdk#how_to_get_it
@@ -22,11 +22,15 @@ from rest_framework.decorators import api_view
 from django.http import Http404
 from cisternas.api.serializers import CisternaSerializer
 
+# autenticação
+from rest_framework import permissions
+
 class CisternaList(APIView):
 	"""
 	List all cisternas, or create a cisterna.\n
 	Listar todas as cisternas, ou criar uma nova.
 	"""
+	# permission_classes = (permissions.IsAuthenticated)
 
 	def get(self, request, format=None):
 		cisternas = Cisterna.objects.all()
@@ -45,6 +49,8 @@ class CisternaDetail(APIView):
 	"""
 	Retrieve, update or deleta a cisterna instance
 	"""
+
+	permission_classes = (permissions.IsAuthenticated)
 
 	def get_object(self, pk):
 		try:
@@ -69,6 +75,19 @@ class CisternaDetail(APIView):
 		cisterna = self.get_object(pk)
 		cisterna.delete()
 		return Response(status=status.HTTP_204_NO_CONTENT)
+
+from django.contrib.auth.models import User
+from rest_framework import generics
+from cisternas.api.serializers import UserSerializer
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 # @csrf_exempt
@@ -142,11 +161,11 @@ def cisternas_list(request):
 		cisternas_list = Cisterna.objects.all()
 	except Cisterna.DoesNotExist as dne:
 		raise Http404("Cisterna não existe / nenhuma cisterna encontrada: {}".format(dne))
-	return render(request, 'cisternas/cisternas-list.html', {'cisternas_list': cisternas_list})
+	return render(request, 'cisternas/cisternas-list.html', {'cisternas_list': cisternas_list, 'medicao_count': Medicao.objects.all().count})
 
 def cisternas_detail(request, cisterna_slug):
 	# fetch the correct cisterna
-	print("slug: %s" % cisterna_slug)
+	# print("slug: %s" % cisterna_slug)
 	try:
 		cisterna = get_object_or_404(Cisterna, slug=cisterna_slug)
 		# https://www.pubnub.com/docs/python/best-practices-playbook#optimal-nearest-point-of-presence-event-handler
@@ -164,6 +183,10 @@ def cisternas_detail(request, cisterna_slug):
 
 		# json
 		# {"eon":{"time_stamp":"2018-08-08T20:55:31", "litros":40}}
+		# {"comando":"ativa"}
+		# {"cisterna":1,"time_stamp":"2018-08-08T20:55:31","eon":{"litros":40}}
+
+		# 2018-08-23T17:40:43
 
 		# pugbnub_test()
 
@@ -173,8 +196,10 @@ def cisternas_detail(request, cisterna_slug):
 	# return render(request, 'cisternas/cisternas-detail.html', {'cisterna': cisterna})
 
 def pugbnub_test():
-	''' Subscreve no canal de dados da cisterna, solicita e imprime as últimas
-	100 mensagens do histórico do canal '''
+	''' 
+	Subscreve no canal de dados da cisterna, solicita e imprime as últimas
+	100 mensagens do histórico do canal 
+	'''
 	print("initializing pubnub")
 	# initializing pubnub
 

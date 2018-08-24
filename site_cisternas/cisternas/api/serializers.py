@@ -8,7 +8,8 @@ class CisternaSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta(object):
 		"""docstring for Meta"""
 		model = Cisterna
-		fields = ('nome', 'escola', 'status', 'status_bomba', 'litros', 'ultima_medicao')
+		# fields = ('nome', 'escola', 'status', 'status_bomba', 'litros', 'ultima_medicao', 'dono')
+		fields = ('nome', 'escola', 'status', 'status_bomba', 'litros', 'ultima_medicao', 'capacidade')
 
 
 class MedicaoSerializer(serializers.HyperlinkedModelSerializer):
@@ -19,3 +20,12 @@ class MedicaoSerializer(serializers.HyperlinkedModelSerializer):
 		model = Medicao
 		fields = ('cisterna', 'time_stamp', 'litros')
 
+
+from django.contrib.auth.models import User
+
+class UserSerializer(serializers.ModelSerializer):
+    # cisternas = serializers.PrimaryKeyRelatedField(many=True, queryset=Cisternas.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username')

@@ -14,8 +14,10 @@ class Cisterna(models.Model):
 	escola = models.CharField(max_length=160)
 	status = models.BooleanField(default=False)
 	status_bomba = models.BooleanField(default=False)
-	litros = models.FloatField(default=0.0)
-	ultima_medicao = models.DateTimeField('ultima medicao', blank=True, null=True)
+	# litros = models.FloatField(default=0.0)
+	# ultima_medicao = models.DateTimeField('ultima medicao', blank=True, null=True)
+	capacidade = models.IntegerField(default=600)
+	# dono = models.ForeignKey('auth.User', related_name='cisternas', on_delete=models.SET_NULL, blank=True, null=True)
 
 
 	def save(self, *args, **kwargs):
@@ -28,6 +30,9 @@ class Cisterna(models.Model):
 
 	def __str__(self):
 		return self.nome
+
+	def esta_ativa(self):
+		return self.ultima_medicao >= timezone.now() - datetime.timedelta(hours=1)
 
 
 class Medicao(models.Model):

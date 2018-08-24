@@ -76,6 +76,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'site_cisternas.wsgi.application'
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        # 'rest_framework.permissions.AllowAny',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    )
+
+}
 
 #Database
 #https://docs.djangoproject.com/en/2.0/ref/settings/#databases
