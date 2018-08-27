@@ -27,7 +27,8 @@
 //HX711 constructor (dout pin, sck pin)
 HX711_ADC LoadCell(D0, D2);
 
-#define fator_de_calibracao 696.0
+//#define fator_de_calibracao 696.0
+#define fator_de_calibracao 1696.0
 
 long ultima_leitura = millis();
 
