@@ -15,7 +15,7 @@
 #include <ArduinoJson.h>
 
 #define DEBUG
-#define VERBOSE
+//#define VERBOSE
 
 #ifdef DEBUG
     #define D(X) X
@@ -48,11 +48,7 @@ const static char canal_de_comandos[] = "comando_cisterna";
 /////////////////Recursos NTP//////////////////////////////////////
 unsigned int localPort = 2390;      // local port to listen for UDP packets
 IPAddress timeServerIP; // time.nist.gov NTP server address //0.br.pool.ntp.org
-//TODO encontrar uma forma de pegar o time_stamp no fusohorario (UTC-3) correto
-//const char* ntpServerName = "time.nist.gov";
 const char* ntpServerName = "0.br.pool.ntp.org";
-//const char* ntpServerName = "c.st1.ntp.br";
-//const char* ntpServerName = "a.ntp.br";
 const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
 
@@ -67,7 +63,7 @@ struct tm ts;
 char timeBuffer[80];
 bool timeDefined = false;
 ///////////////////////////////////////////////////////////////////
-/*
+
 /////////////////Propriedades da celula de carga///////////////////
 //#define  ADDO  0    //Data Out //versao para ESP01
 //#define  ADSK  2    //SCK //versao para ESP01
@@ -80,34 +76,51 @@ bool timeDefined = false;
 //HX711 constructor (dout pin, sck pin)
 HX711_ADC LoadCell(D0, D2);
 
-#define fator_de_calibracao 696.0
+#define calibration_factor 1696.0 //calibrado para devolver medidas em gramas
 
-long ultima_leitura = millis();
-float forca = 0.0;
+long last_reading = millis();
+//float strength = 0.0;
 ///////////////////////////////////////////////////////////////////
-*/
 
-//número identificador da cisterna
+
+//peso do cano de casa: 113g
+
+/////////////////Constantes da cisterna////////////////////////////
+//numero identificador da cisterna
 #define ID_CISTERNA 1
 
-#define PINO_ATUADOR D6
+//area da base da cisterna (em metros quadrados)
+#define BASE_AREA 0.46152
+
+//peso do cano (em newtons)
+#define PIPE_WEIGHT 4 // testando com 400g = 0.4kg = 4N
+
+//diâmetro do cano (em metros)
+#define PIPE_DIAMETER 0.04 //40mm = 0.04 metro
+
+///////////////////////////////////////////////////////////////////
+
+
+#define ACTUATOR_PIN D6
 
 long inicio = millis();
 
 void setup() {
     Serial.begin(115200);
     D(Serial.println("Iniciando celula de carga ...");)
-    /*
+
+    //setup da celula de carga
     LoadCell.begin();
     long stabilisingtime = 5000; // tare preciscion can be improved by adding a few seconds of stabilising time
     LoadCell.start(stabilisingtime);
-    LoadCell.setCalFactor(fator_de_calibracao); // user set calibration factor (float)
+    LoadCell.setCalFactor(calibration_factor); // user set calibration factor (float)
     D(Serial.println("Startup + tare is complete");)
     D(Serial.println();)
-    */
-    pinMode(PINO_ATUADOR, OUTPUT);
+    //
+    
+    pinMode(ACTUATOR_PIN, OUTPUT);
   
-//    pwm.setup(PINO_ATUADOR, 100, 512);
+//    pwm.setup(ACTUATOR_PIN, 100, 512);
     // attempt to connect using WPA2 encryption:
     D(Serial.println("Attempting to connect to WPA network...");)
     wifiConnection();
@@ -125,12 +138,12 @@ void loop() {
         wifiConnection();
     } else {
         //Get load cell reading
-        //read_load_cell();
-        //forca = ((millis() / 3) % 10) * 7.2;
-        float forca = random(100);
+        float strength = read_load_cell();
 
-        //TODO calculate real water measure
-        float litros = forca;
+        //float litros = strength;
+        float litros = calculate_water_volume(strength) * 1000;
+        D(Serial.print("litros: ");)
+        D(Serial.println(litros);)
         
         // Get current time from NTP
         if (!timeDefined) {
@@ -141,7 +154,6 @@ void loop() {
         time (&rawTime);
         now = rawTime + startTime;
         ts = *localtime(&now);
-//        strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H:%M:%S.000Z", &ts);
         strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%dT%H:%M:%S", &ts);
 
         D(Serial.println(timeBuffer);)
@@ -171,31 +183,55 @@ void wifiConnection() {
     D(Serial.println(WiFi.localIP());)
 }
 
+/* 
+ *  Recebe a forca em newtons e devolve o volume de agua (em metros cubicos) pela seguinte formula
+ *  Litros = B*h = B * (Fr + Pc) / (g * PI * (d^2 / 4) * ro) 
+ *  onde
+ *  B: area da base do recipiente
+ *  Fr: forca sobre o sensor
+ *  Pc: peso do cano
+ *  g: aceleracao gravitacional = 9.8 m/s^2
+ *  PI: constante matemática = 3.1415
+ *  d: diametro do cano
+ *  ro: densidade da agua = 997kg/m^3
+ */
+float calculate_water_volume(float strength) {
+    D(float volume = BASE_AREA * (strength + PIPE_WEIGHT) / (9.8 * 3.1415 * (PIPE_DIAMETER*PIPE_DIAMETER / 4) * 997);)
+    D(Serial.print("volume: ");)
+    D(Serial.println(volume);)
+    return BASE_AREA * (strength + PIPE_WEIGHT) / (9.8 * 3.1415 * (PIPE_DIAMETER*PIPE_DIAMETER / 4) * 997);
+}
+
 /*
-void read_load_cell() {
+ * Devolve a leitura de forca mensurada pela celula de carga. 
+ * Ajuste o calibration_factor para obter leituras na unidade de medida desejada.
+ */
+float read_load_cell() {
     //update() should be called at least as often as HX711 sample rate; >10Hz@10SPS, >80Hz@80SPS
     //longer delay in scetch will reduce effective sample rate (be carefull with delay() in loop)
     LoadCell.update();
     //get smoothed value from data set + current calibration factor
-    if (millis() > ultima_leitura + 250) {
-        forca = LoadCell.getData();
-        D(Serial.print("Forca: ");)
-        D(Serial.print(forca);)
-        D(Serial.println();)
-        ultima_leitura = millis();
+    if (millis() > last_reading + 250) {
+      float reading = LoadCell.getData();
+      D(Serial.print("load cell reading: ");)
+      D(Serial.print(reading);)
+      Serial.println();
+      last_reading = millis();
+      //1000g = 1kg = 10N => Xg = 0,01N
+      return reading / 100; //dividindo por 100 para retornar o peso em newtons
     }
     //receive from serial terminal
-      if (Serial.available() > 0) {
-          float i;
-          char inByte = Serial.read();
-          if (inByte == 't') LoadCell.tareNoDelay();
-      }
+    if (Serial.available() > 0) {
+      float i;
+      char inByte = Serial.read();
+      if (inByte == 't') LoadCell.tareNoDelay();
+    }
     //check if last tare operation is complete
     if (LoadCell.getTareStatus() == true) {
-        Serial.println("Tare complete");
+      Serial.println("Tare complete");
     }
 }
-*/
+
 void publishToPubNub(String json_string) {
     V(Serial.println("PublishToPubNub");)
     char json_char_array[100];
@@ -248,9 +284,9 @@ void checkPubNubHistory() {
     }
     const char* command = root["comando"];
     if (String(command).equals("ativa")) {
-        analogWrite(PINO_ATUADOR, 800);
+        analogWrite(ACTUATOR_PIN, 800);
     } else if (String(command).equals("desativa")) {
-        analogWrite(PINO_ATUADOR, 100);
+        analogWrite(ACTUATOR_PIN, 100);
     }
 }
 
@@ -291,12 +327,10 @@ bool getTimeNTP() {
         // subtract seventy years:
         //unsigned long epoch = secsSince1900 - seventyYears;
 
-        //TODO
+        //subtarct 3 hours to match São Paulo - Brazil timezone
         const long timeZoneOffset = -10800L; //3 hours in seconds
         now = secsSince1900 - seventyYears + timeZoneOffset ;
-
-//        now = secsSince1900 - seventyYears;
-    
+        
         // backup time after seventy years
         time( &rawTime );
         startTime = now - rawTime;
