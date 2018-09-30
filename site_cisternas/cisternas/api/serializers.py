@@ -9,7 +9,8 @@ class CisternaSerializer(serializers.HyperlinkedModelSerializer):
 		"""docstring for Meta"""
 		model = Cisterna
 		# fields = ('nome', 'escola', 'status', 'status_bomba', 'litros', 'ultima_medicao', 'dono')
-		fields = ('nome', 'escola', 'status', 'status_bomba', 'litros', 'ultima_medicao', 'capacidade')
+		# fields = ('nome', 'escola', 'status', 'status_bomba', 'litros', 'ultima_medicao', 'capacidade')
+		fields = ('nome', 'escola', 'status', 'status_bomba', 'capacidade')
 
 
 class MedicaoSerializer(serializers.HyperlinkedModelSerializer):

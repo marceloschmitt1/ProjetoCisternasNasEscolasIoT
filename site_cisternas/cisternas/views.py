@@ -192,6 +192,13 @@ def cisternas_detail(request, cisterna_slug):
 
 	except Cisterna.DoesNotExist as dne:
 		raise Http404("Cisterna não existe {}".format(dne))
+
+	#para ter acesso aos dados da cisterna no javascript da página (não está funcionando) {
+	# from django.core import serializers
+	# json_serializer = serializers.get_serializer("json")()
+	# cis_ser = json_serializer.serialize(cisterna, ensure_ascii=False)
+	# return render(request, 'cisternas/cisternas-detail.html', {'cisterna': cisterna, 'medicoes_list': cisterna.medicoes.all(), 'cis_ser': cis_ser})
+	# }
 	return render(request, 'cisternas/cisternas-detail.html', {'cisterna': cisterna, 'medicoes_list': cisterna.medicoes.all()})
 	# return render(request, 'cisternas/cisternas-detail.html', {'cisterna': cisterna})
 
@@ -211,11 +218,11 @@ def pugbnub_test():
 	pubnub = PubNub(pnconfig)
 
 	# subscribe
-	pubnub.subscribe().channels('dados_cisterna').execute()
+	pubnub.subscribe().channels('dados_cisterna1').execute()
 
 	# retrieve messsages from histrory
 	# https://www.pubnub.com/docs/python/api-reference-storage-and-playback#history
-	envelope = pubnub.history().channel("dados_cisterna").count(100).sync()
+	envelope = pubnub.history().channel("dados_cisterna1").count(100).sync()
 	print("envelope: ")
 	print(envelope)
 	print("str(envelope): ")
@@ -232,5 +239,5 @@ def pugbnub_test():
 		# 
 		# print(message.timetoken)
 	# unsubscribe
-	pubnub.unsubscribe().channels("dados_cisterna").execute()
+	pubnub.unsubscribe().channels("dados_cisterna1").execute()
 	# pass

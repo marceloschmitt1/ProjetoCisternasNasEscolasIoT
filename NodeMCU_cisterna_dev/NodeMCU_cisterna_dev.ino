@@ -41,8 +41,8 @@ const char* pass = "mirtero1";
 
 const static char pubkey[] = "pub-c-6ce39655-3209-4cea-acc9-543751fe4e55";
 const static char subkey[] = "sub-c-6e52b6c2-8e6b-11e8-b7a4-ce74daf54d52";
-const static char canal_de_dados[] = "dados_cisterna";
-const static char canal_de_comandos[] = "comando_cisterna";
+const static char canal_de_dados[] = "dados_cisterna1";
+const static char canal_de_comandos[] = "comando_cisterna1";
 ///////////////////////////////////////////////////////////////////
 
 /////////////////Recursos NTP//////////////////////////////////////
@@ -65,32 +65,40 @@ bool timeDefined = false;
 ///////////////////////////////////////////////////////////////////
 
 /////////////////Propriedades da celula de carga///////////////////
-//#define  ADDO  0    //Data Out //versao para ESP01
-//#define  ADSK  2    //SCK //versao para ESP01
-#define  ADDO  D0    //Data Out //versao para nodeMCU (ESP12)
-#define  ADSK  D2    //SCK //versao para nodeMCU (ESP12)
+#define SHARP_PIN A0 // Pino do sensor infravermelho
 
-//Este sktech utiliza uma versão adaptada da biblioteca HX711_ADC
-#include <HX711_ADC.h>
+#define INTERVALOS 6
+//const float abscissas[] = {0.3, 0.35, 0.47, 0.57, 1.48, 1.96, 2.47};
+const float abscissas[] = {0.3, 0.35, 0.47, 0.57, 0.91, 1.48, 1.96, 2.47};
+//const float inclinacao[] = {-200, -166,67, -200, -65,93, -20,83, -19,60};
+const float inclinacao[] = {-200, -166.67, -120, -117.64, -65.93, -20.83, -19.60};
+//const int ordenadas[] = {150, 140, 120, 100, 40, 30, 20};
+const int ordenadas[] = {150, 140, 120, 100, 60, 40, 30, 20};
 
-//HX711 constructor (dout pin, sck pin)
-HX711_ADC LoadCell(D0, D2);
-
-#define calibration_factor 1696.0 //calibrado para devolver medidas em gramas
-
-long last_reading = millis();
-//float strength = 0.0;
 ///////////////////////////////////////////////////////////////////
 
 
 //peso do cano de casa: 113g
 
 /////////////////Constantes da cisterna////////////////////////////
+// Dados da cisterna na Amorim Lima
+//Capacidade: 2500 L = 2.5 m^3
+//Altura: 172 cm = 1.72 m
+//Diâmetro: 157 cm
+//Área da base * Altura = Capacidade => Área da base = 2.5/1.72 = 1.4534 m^2
 //numero identificador da cisterna
 #define ID_CISTERNA 1
 
+//altura em metros: 1.72 m = 172 cm
+#define CISTERNA_HIGH 1.72
 //area da base da cisterna (em metros quadrados)
-#define BASE_AREA 0.46152
+#define CISTERNA_BASE_AREA 1.4534
+
+//capacidade da cisterna (em metros cubicos)
+#define CISTERNA_CAPACITY 2.5
+
+//distancia do sensor ateh o nivel do ladrao (em metros)
+#define OFFSET 0.3
 
 //peso do cano (em newtons)
 #define PIPE_WEIGHT 4 // testando com 400g = 0.4kg = 4N
@@ -103,33 +111,25 @@ long last_reading = millis();
 
 #define ACTUATOR_PIN D6
 
-long inicio = millis();
+//long inicio = millis();
 
 void setup() {
     Serial.begin(115200);
-    D(Serial.println("Iniciando celula de carga ...");)
+    //D(Serial.println("Iniciando celula de carga ...");)
 
-    //setup da celula de carga
-    LoadCell.begin();
-    long stabilisingtime = 5000; // tare preciscion can be improved by adding a few seconds of stabilising time
-    LoadCell.start(stabilisingtime);
-    LoadCell.setCalFactor(calibration_factor); // user set calibration factor (float)
-    D(Serial.println("Startup + tare is complete");)
-    D(Serial.println();)
-    //
+    pinMode(SHARP_PIN, INPUT);
     
     pinMode(ACTUATOR_PIN, OUTPUT);
   
 //    pwm.setup(ACTUATOR_PIN, 100, 512);
-    // attempt to connect using WPA2 encryption:
+    
     D(Serial.println("Attempting to connect to WPA network...");)
     wifiConnection();
     
     udp.begin(localPort);
     
     PubNub.begin(pubkey, subkey);
-
-    randomSeed(analogRead(A0));
+    
 }
 
 void loop() {
@@ -137,13 +137,20 @@ void loop() {
     if (WiFi.status() != WL_CONNECTED) {
         wifiConnection();
     } else {
-        //Get load cell reading
-        float strength = read_load_cell();
-
-        //float litros = strength;
-        float litros = calculate_water_volume(strength) * 1000;
+        float distance = calculate_distance(read_sharp());
+        D(Serial.print("distance: ");)
+        D(Serial.println(distance);)
+        // O volume de agua eh o volume total menos a distancia da superficie da agua ateh o ladrao.
+        //float litros = (CISTERNA_CAPACITY * 1000) - ((distance - OFFSET*100) * CISTERNA_BASE_AREA);
+        float litros = (CISTERNA_CAPACITY - ((CISTERNA_HIGH - distance) * CISTERNA_BASE_AREA))*1000; // volume de agua em litros
         D(Serial.print("litros: ");)
         D(Serial.println(litros);)
+        /*
+        if (litros < 0) {
+            litros = 0;
+            Serial.println("Litros < 0");
+        }
+        */
         
         // Get current time from NTP
         if (!timeDefined) {
@@ -183,53 +190,42 @@ void wifiConnection() {
     D(Serial.println(WiFi.localIP());)
 }
 
-/* 
- *  Recebe a forca em newtons e devolve o volume de agua (em metros cubicos) pela seguinte formula
- *  Litros = B*h = B * (Fr + Pc) / (g * PI * (d^2 / 4) * ro) 
- *  onde
- *  B: area da base do recipiente
- *  Fr: forca sobre o sensor
- *  Pc: peso do cano
- *  g: aceleracao gravitacional = 9.8 m/s^2
- *  PI: constante matemática = 3.1415
- *  d: diametro do cano
- *  ro: densidade da agua = 997kg/m^3
- */
-float calculate_water_volume(float strength) {
-    D(float volume = BASE_AREA * (strength + PIPE_WEIGHT) / (9.8 * 3.1415 * (PIPE_DIAMETER*PIPE_DIAMETER / 4) * 997);)
-    D(Serial.print("volume: ");)
-    D(Serial.println(volume);)
-    return BASE_AREA * (strength + PIPE_WEIGHT) / (9.8 * 3.1415 * (PIPE_DIAMETER*PIPE_DIAMETER / 4) * 997);
+float read_sharp() {
+    Serial.print("Leitura do sensor sharp: ");
+    int sharp_reading = analogRead(SHARP_PIN);
+    Serial.println(sharp_reading);
+    float sensor_voltage = (1.0*sharp_reading/1024) * 3.0;
+    Serial.print("Voltagem: ");
+    Serial.println(sensor_voltage);
+    return sensor_voltage;
 }
 
-/*
- * Devolve a leitura de forca mensurada pela celula de carga. 
- * Ajuste o calibration_factor para obter leituras na unidade de medida desejada.
- */
-float read_load_cell() {
-    //update() should be called at least as often as HX711 sample rate; >10Hz@10SPS, >80Hz@80SPS
-    //longer delay in scetch will reduce effective sample rate (be carefull with delay() in loop)
-    LoadCell.update();
-    //get smoothed value from data set + current calibration factor
-    if (millis() > last_reading + 250) {
-      float reading = LoadCell.getData();
-      D(Serial.print("load cell reading: ");)
-      D(Serial.print(reading);)
-      Serial.println();
-      last_reading = millis();
-      //1000g = 1kg = 10N => Xg = 0,01N
-      return reading / 100; //dividindo por 100 para retornar o peso em newtons
+float calculate_distance(float voltage) {
+    int i;
+    for (i = 0; i < INTERVALOS+1; i++) 
+        if (voltage < abscissas[i]) break;
+//    D(Serial.print(ordenadas[i]);)
+//    D(Serial.print(" + ");)
+//    D(Serial.print(inclinacao[i]);)
+//    D(Serial.print("*(");)
+//    D(Serial.print(leitura);)
+//    D(Serial.print(" - ");)
+//    D(Serial.print(abscissas[i]);)
+//    D(Serial.print(")");)
+//    D(Serial.println();)
+    //float distancia = ordenadas[i] + inclinacao[i]*(voltage - abscissas[i]); //em centimetros
+    Serial.print("abscissas[0]");
+    Serial.println(abscissas[0]);
+    // Leitura incorreta
+    if (voltage < abscissas[0]) {
+        D(Serial.println("bad sensor reading: ");)
+        return 0;
     }
-    //receive from serial terminal
-    if (Serial.available() > 0) {
-      float i;
-      char inByte = Serial.read();
-      if (inByte == 't') LoadCell.tareNoDelay();
-    }
-    //check if last tare operation is complete
-    if (LoadCell.getTareStatus() == true) {
-      Serial.println("Tare complete");
-    }
+    // voltagem 1.5 - 1.49 - 1.51 - 1.63
+    float distance = ordenadas[i] + inclinacao[i]*(voltage - abscissas[i]);
+    D(Serial.print("calculated distance: ");)
+    D(Serial.println(distance);)
+    return distance / 100;
 }
 
 void publishToPubNub(String json_string) {

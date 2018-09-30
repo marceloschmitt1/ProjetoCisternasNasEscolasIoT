@@ -29,15 +29,23 @@
 
 </body>
 
+
 <script type="text/javascript">
-    //var __capacidade = cisterna.capacidade;
+    //para ter acesso aos dados da cisterna no javascript da página (não está funcionando)
+    // var __capacidade = cisterna.capacidade;
+    //console.log("cisterna");
+    // var __cisterna = 
+    // console.log({{cisterna}});
+    //var __cisterna = '{{ cis_ser|escapejs }}';
+
+
     var __eon_pubnub = new PubNub({
         subscribeKey: "sub-c-6e52b6c2-8e6b-11e8-b7a4-ce74daf54d52"
     });
 
     gauge_chart = eon.chart({
         pubnub: __eon_pubnub,
-        channels: ["dados_cisterna"],
+        channels: ["dados_cisterna1"],
         history: true,
         generate: {
             bindto: '#rt_gauge',
@@ -58,14 +66,14 @@
                     show: true // to turn off the min/max labels.
                 },
                 min: 0,
-                max: 100,
+                max: 2500,
                 units: ' litros',
                 width: 39, // for adjusting arc thickness
             },
             color: {
                 pattern: ['#FF0000', '#F6C600', '#60B044'],
                 threshold: {
-                  values: [30, 60, 90]
+                  values: [625, 1300, 2000]
                 }
             },
             size: {
@@ -81,7 +89,7 @@
 
     plot_chart = eon.chart({
         pubnub: __eon_pubnub,
-        channels: ["dados_cisterna"],
+        channels: ["dados_cisterna1"],
         history: true,
         flow: true,
         rate: 1000,
@@ -137,6 +145,7 @@
         }
     });
 </script>
+
 
 <style lang="scss">
 /*
