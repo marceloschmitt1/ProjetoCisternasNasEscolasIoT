@@ -27,7 +27,7 @@ router = routers.DefaultRouter()
 router.register('cisternas', CisternaViewSet)
 router.register('medicoes', MedicaoViewSet)
 
-from . import views
+# from . import views
 
 app_name = 'cisternas'
 urlpatterns = [
