@@ -67,6 +67,71 @@ def vote(request, question_id):
 #     print("votando vote_on_choice" % choice)
 #     return HttpResponse("You're voting for choice {} on question {}.".format(choice, question_id))
 
-def graf(request):
-    print("graf em polls/views")
-    return render(request, 'polls/grafico_pub_function.html')
+def graph_results(request, question_id):
+	print("executando graph_results")
+	import matplotlib
+	from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+	from matplotlib.figure import Figure
+	from matplotlib.dates import DateFormatter
+	fig = Figure()
+
+	ax = fig.add_subplot(1,1,1)
+	question = get_object_or_404(Question, pk=question_id) # Get the question object
+	
+	x = matplotlib.numpy.arange(1, question.choice_set.count())
+	choices = question.choice_set.all()
+
+	votes = [choice.votes for choice in choices]
+	names = [choice.choice_text for choice in choices]
+
+	numTests = question.choice_set.count()
+	ind = matplotlib.numpy.arange(numTests) # the x locations for the groups
+
+	cols = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'indigo']*10
+
+	cols = cols[0:len(ind)]
+	ax.bar(ind, votes, color=cols)
+
+	ax.set_xticks(ind + 0.5)
+	ax.set_xticklabels(names)
+
+	ax.set_xlabel("Choices")
+	ax.set_ylabel("Votes")
+
+	ax.grid(True)
+
+	title = "Dynamically Generated Results Plot \nfor question: %s" % question.question_text
+	ax.set_title(title)
+
+	canvas = FigureCanvas(fig)
+
+	# from django import settings
+	from django.conf import settings
+	# print("importado")
+	# print(type(settings.BASE_DIR))
+	# print(settings.BASE_DIR)
+
+	# import os
+	# img_path = os.path.join(settings.BASE_DIR, '/polls/static/polls/images/')
+	img_path = settings.BASE_DIR + '/polls/static/polls/images/'
+	# img_path.join('/polls/static/polls/images/')
+	img_path += 'question{}.png'.format(question.id)
+
+	# print("img_path ", img_path)
+	# from . import urls
+	# print("app_name ", app_name)
+
+	fig.savefig(img_path) # salva a figura   savefig('foo.png', bbox_inches='tight')
+
+	# sleep(5)
+
+	# https://docs.python.org/3/library/io.html
+	# from io import BytesIO
+	# bio = BytesIO()
+	# canvas.print_png(bio)
+	# plot = bio.getvalue()
+	# return HttpResponse(plot, content_type='image/png')
+
+
+	# return render(request, 'polls/results.html', {'question': question, 'plot', plot})
+	return render(request, 'polls/results.html', {'question': question,})
